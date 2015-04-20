@@ -8,8 +8,8 @@ import com.rabbitmq.client.*;
 
 public class RabbitMQReceiver {
 
+    private final static String QUEUE_NAME = "esperOutputQueue";
     private static final String EXCHANGE_NAME = "sortedLogs";
-    private final static String QUEUE_NAME = "testQueue";
 
     public static void main(String[] argc) throws Exception {
 
@@ -18,8 +18,9 @@ public class RabbitMQReceiver {
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
 
+        String queueName = channel.queueDeclare(QUEUE_NAME, false, false, false, null).getQueue();
         channel.exchangeDeclare(EXCHANGE_NAME, "fanout");
-        channel.queueBind(QUEUE_NAME, EXCHANGE_NAME, "");
+        channel.queueBind(queueName, EXCHANGE_NAME, "");
 
         System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
