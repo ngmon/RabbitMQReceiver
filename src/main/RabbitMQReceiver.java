@@ -8,8 +8,7 @@ import com.rabbitmq.client.*;
 
 public class RabbitMQReceiver {
 
-    private final static String QUEUE_NAME = "esperOutputQueue";
-    private static final String EXCHANGE_NAME = "sortedLogs";
+    private final static String QUEUE_NAME = "esperOutputQueue";  //will NOT be created if non-existing, purpose is to create only in app!!
 
     public static void main(String[] argc) throws Exception {
 
@@ -17,10 +16,6 @@ public class RabbitMQReceiver {
         factory.setHost("localhost");
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
-
-        String queueName = channel.queueDeclare(QUEUE_NAME, false, false, false, null).getQueue();
-        channel.exchangeDeclare(EXCHANGE_NAME, "fanout");
-        channel.queueBind(queueName, EXCHANGE_NAME, "");
 
         System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
