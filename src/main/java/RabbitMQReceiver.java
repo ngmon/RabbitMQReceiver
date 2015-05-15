@@ -31,7 +31,7 @@ public class RabbitMQReceiver {
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
 
-        System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+        logger.info(" [*] Waiting for messages. To exit press CTRL+C");
 
         QueueingConsumer consumer = new QueueingConsumer(channel);
         channel.basicConsume(queueName, true, consumer);
@@ -43,32 +43,36 @@ public class RabbitMQReceiver {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
             String message = new String(delivery.getBody());
 
+            logger.info(message);
+
             if(numOfMessages > 0) {
                 messageCount++;
             }
 
-            int patternIndex = message.indexOf(pattern);
-            if(patternIndex < 0) {
-                continue;
-            }
+            if(logger.isDebugEnabled()) {
+                int patternIndex = message.indexOf(pattern);
+                if(patternIndex < 0) {
+                    continue;
+                }
 
-            int startIndex = message.indexOf(pattern) + pattern.length()+1;
-            int endIndex = message.indexOf('"', startIndex);
-            String timestamp = message.substring(startIndex, endIndex);
-            ZonedDateTime timestampLong = parseDate(timestamp);
-            measureTime(timestampLong);
+                int startIndex = message.indexOf(pattern) + pattern.length()+1;
+                int endIndex = message.indexOf('"', startIndex);
+                String timestamp = message.substring(startIndex, endIndex);
+                logger.debug(measureTime(timestamp));
+            }
         }
     }
 
+    private String measureTime(String timestamp) {
+        ZonedDateTime eventTime = parseDate(timestamp);
+        ZonedDateTime currentTime = LocalDateTime.now().atZone(ZoneId.of("+02:00"));
+        return ("Event came in '" + TimeUnit.MILLISECONDS.convert
+                (currentTime.getNano() - eventTime.getNano(), TimeUnit.NANOSECONDS)
+                + "' milliseconds after its creation");
+    }
     private ZonedDateTime parseDate(String input) {
         final DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME; //"yyyy-MM-dd'T'HH:mm:ss.SSSz" format
         return ZonedDateTime.parse(input, formatter);
     }
 
-    private void measureTime(ZonedDateTime timestamp) {
-        ZonedDateTime currentTime = LocalDateTime.now().atZone(ZoneId.of("+02:00"));
-        System.out.println("Event came in '"
-                + TimeUnit.MILLISECONDS.convert(currentTime.getNano() - timestamp.getNano(), TimeUnit.NANOSECONDS)
-                + "' milliseconds after its creation");
-    }
 }
