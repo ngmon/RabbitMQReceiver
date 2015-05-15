@@ -1,5 +1,3 @@
-package main;
-
 import com.rabbitmq.client.*;
 
 import java.time.LocalDateTime;
@@ -19,25 +17,41 @@ public class RabbitMQReceiver {
 
     private static final Logger logger = LogManager.getLogger(RabbitMQReceiver.class);
 
-    private final static String QUEUE_NAME = "esperOutputQueue";  //will NOT be created if non-existing, purpose is to create only in app!!
+    //queueName will NOT be created if non-existing, purpose is to create only in app!!
+    //set numOfMessages to 0 for endless message waiting
+    public void listen(String[] args) throws Exception {
 
-    public static void main(String[] argc) throws Exception {
+        String hostName = args[0];
+        String queueName = args[1];
+        String timestampPattern = args[2];
+        int numOfMessages = Integer.parseInt(args[3]);
 
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
+        factory.setHost(hostName);
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
 
         System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
         QueueingConsumer consumer = new QueueingConsumer(channel);
-        channel.basicConsume(QUEUE_NAME, true, consumer);
+        channel.basicConsume(queueName, true, consumer);
 
-        String pattern = "@timestamp\":";
+        String pattern = timestampPattern + "\":";
 
-        while (true) {
+        int messageCount = 0;
+        while (messageCount <= numOfMessages) {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
             String message = new String(delivery.getBody());
+
+            if(numOfMessages > 0) {
+                messageCount++;
+            }
+
+            int patternIndex = message.indexOf(pattern);
+            if(patternIndex < 0) {
+                continue;
+            }
+
             int startIndex = message.indexOf(pattern) + pattern.length()+1;
             int endIndex = message.indexOf('"', startIndex);
             String timestamp = message.substring(startIndex, endIndex);
@@ -46,14 +60,15 @@ public class RabbitMQReceiver {
         }
     }
 
-    private static ZonedDateTime parseDate(String input) {
+    private ZonedDateTime parseDate(String input) {
         final DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME; //"yyyy-MM-dd'T'HH:mm:ss.SSSz" format
         return ZonedDateTime.parse(input, formatter);
     }
 
-    private static void measureTime(ZonedDateTime timestamp) {
+    private void measureTime(ZonedDateTime timestamp) {
         ZonedDateTime currentTime = LocalDateTime.now().atZone(ZoneId.of("+02:00"));
-        logger.info("Event came in '"
-                + TimeUnit.NANOSECONDS.toMillis(currentTime.getNano() - timestamp.getNano()) + "' milliseconds after its creation");
+        System.out.println("Event came in '"
+                + TimeUnit.MILLISECONDS.convert(currentTime.getNano() - timestamp.getNano(), TimeUnit.NANOSECONDS)
+                + "' milliseconds after its creation");
     }
 }
