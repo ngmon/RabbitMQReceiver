@@ -34,7 +34,7 @@ public class RabbitMQReceiver {
         logger.info(" [*] Waiting for messages. To exit press CTRL+C");
 
         QueueingConsumer consumer = new QueueingConsumer(channel);
-        channel.basicConsume(queueName, true, consumer);
+        channel.basicConsume(queueName, false, consumer);
 
         String pattern = timestampPattern + "\":";
 
