@@ -65,7 +65,8 @@ public class RabbitMQReceiver {
 
     private String measureTime(String timestamp) {
         ZonedDateTime eventTime = parseDate(timestamp);
-        ZonedDateTime currentTime = LocalDateTime.now().atZone(ZoneId.of("+02:00"));
+        ZoneId usedZone = eventTime.getZone();
+        ZonedDateTime currentTime = LocalDateTime.now().atZone(usedZone);
         return ("Event came in '" + TimeUnit.MILLISECONDS.convert
                 (currentTime.getNano() - eventTime.getNano(), TimeUnit.NANOSECONDS)
                 + "' milliseconds after its creation");
