@@ -23,8 +23,7 @@ public class RabbitMQReceiver {
 
         String hostName = args[0];
         String queueName = args[1];
-        String timestampPattern = args[2];
-        int numOfMessages = Integer.parseInt(args[3]);
+        int numOfMessages = Integer.parseInt(args[2]);
 
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(hostName);
@@ -36,41 +35,12 @@ public class RabbitMQReceiver {
         QueueingConsumer consumer = new QueueingConsumer(channel);
         channel.basicConsume(queueName, true, consumer);
 
-        String pattern = timestampPattern + "\":";
-
         int messageCount = 0;
         while (messageCount <= numOfMessages) {
             QueueingConsumer.Delivery delivery = consumer.nextDelivery();
             String message = new String(delivery.getBody());
 
             logger.info(message);
-
-            if(numOfMessages > 0) {
-                messageCount++;
-            }
-
-            int patternIndex = message.indexOf(pattern);
-            if(patternIndex < 0) {
-                continue;
-            }
-
-            int startIndex = message.indexOf(pattern) + pattern.length()+1;
-            int endIndex = message.indexOf('"', startIndex);
-            String timestamp = message.substring(startIndex, endIndex);
         }
     }
-
-    private String measureTime(String timestamp) {
-        ZonedDateTime eventTime = parseDate(timestamp);
-        ZoneId usedZone = eventTime.getZone();
-        ZonedDateTime currentTime = LocalDateTime.now().atZone(usedZone);
-        return ("Event came in '" + TimeUnit.MILLISECONDS.convert
-                (currentTime.getNano() - eventTime.getNano(), TimeUnit.NANOSECONDS)
-                + "' milliseconds after its creation");
-    }
-    private ZonedDateTime parseDate(String input) {
-        final DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME; //"yyyy-MM-dd'T'HH:mm:ss.SSSz" format
-        return ZonedDateTime.parse(input, formatter);
-    }
-
 }
