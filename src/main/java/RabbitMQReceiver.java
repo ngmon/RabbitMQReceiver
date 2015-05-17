@@ -49,17 +49,14 @@ public class RabbitMQReceiver {
                 messageCount++;
             }
 
-            if(logger.isDebugEnabled()) {
-                int patternIndex = message.indexOf(pattern);
-                if(patternIndex < 0) {
-                    continue;
-                }
-
-                int startIndex = message.indexOf(pattern) + pattern.length()+1;
-                int endIndex = message.indexOf('"', startIndex);
-                String timestamp = message.substring(startIndex, endIndex);
-                logger.debug(measureTime(timestamp));
+            int patternIndex = message.indexOf(pattern);
+            if(patternIndex < 0) {
+                continue;
             }
+
+            int startIndex = message.indexOf(pattern) + pattern.length()+1;
+            int endIndex = message.indexOf('"', startIndex);
+            String timestamp = message.substring(startIndex, endIndex);
         }
     }
 
